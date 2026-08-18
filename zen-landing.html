@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zen — Print Your People</title>
+<meta name="description" content="Drop in your photos, pick a paper size, and Zen lays them out at exact print size with professional AI color grading. Free, private, runs in your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Yatra+One&display=swap" rel="stylesheet">
+<meta name="color-scheme" content="dark">
+<style>
+  :root{
+    --bench:#22272e; --deep:#191d23; --line:#39404a;
+    --ink:#edeff3; --muted:#98a0ae; --paper:#f8f7f3;
+    --tape:#e8b64c; --signal:#5ec2a6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{background:#22272e}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:"Avenir Next","Segoe UI",system-ui,sans-serif;
+    background:var(--bench); color:var(--ink); line-height:1.6;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:0 22px}
+  nav{
+    display:flex;align-items:center;gap:12px;padding:16px 22px;
+    max-width:960px;margin:0 auto;
+  }
+  .logo{font-weight:400;letter-spacing:.08em;text-transform:uppercase;font-size:17px;font-family:"Yatra One",sans-serif;display:flex;align-items:center;gap:7px}
+  .yakmini{width:26px;height:auto}
+  .logo em{font-style:normal;color:var(--tape)}
+  nav .sp{flex:1}
+  .btn{
+    display:inline-block;font-weight:700;font-size:14px;text-decoration:none;
+    padding:11px 20px;border-radius:10px;border:1px solid var(--line);color:var(--ink);
+    transition:.15s;
+  }
+  .btn:hover{background:#2d333c}
+  .btn.gold{background:var(--tape);border-color:var(--tape);color:#1b1f27}
+  .btn.gold:hover{background:#f0c25e}
+  .btn.big{font-size:16px;padding:14px 28px}
+
+  /* hero */
+  .hero{
+    padding:70px 0 60px;text-align:center;
+    background:
+      radial-gradient(900px 420px at 50% -10%, #2e3540 0%, transparent 65%);
+  }
+  .hero h1{
+    font-family:"Yatra One",sans-serif;font-weight:400;
+    font-size:clamp(30px, 5.5vw, 52px); line-height:1.24;
+    letter-spacing:-0.01em; max-width:760px; margin:0 auto 18px;
+  }
+  .hero h1 em{font-style:normal;color:var(--tape)}
+  .hero p{
+    font-size:clamp(15px,2.3vw,18px); color:var(--muted);
+    max-width:600px;margin:0 auto 30px;
+  }
+  .hero .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .hero .tiny{margin-top:14px;font-size:12.5px;color:var(--muted)}
+
+  /* mock sheet */
+  .sheetmock{
+    margin:54px auto 0; width:min(340px, 82vw); aspect-ratio:210/297;
+    background:var(--paper); border-radius:4px; position:relative;
+    box-shadow:0 3px 8px rgba(0,0,0,.5), 0 30px 70px rgba(0,0,0,.55);
+    transform:rotate(-1.6deg);
+  }
+  .sheetmock .tape{
+    position:absolute; top:-12px; left:50%; transform:translateX(-50%) rotate(2deg);
+    width:92px; height:26px; background:rgba(232,182,76,.85); border-radius:2px;
+    box-shadow:0 1px 3px rgba(0,0,0,.25);
+  }
+  .sheetmock .g{
+    position:absolute; inset:7% 6%; display:grid; gap:2.5%;
+    grid-template-columns:repeat(4,1fr); grid-template-rows:repeat(5,1fr);
+  }
+  .sheetmock .c{border-radius:2px}
+
+  /* sections */
+  section{padding:64px 0;border-top:1px solid var(--line)}
+  h2{font-size:clamp(22px,3.4vw,30px);font-weight:800;margin-bottom:10px;letter-spacing:-0.01em}
+  .lead{color:var(--muted);max-width:640px;margin-bottom:34px}
+  .feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+  .feat{
+    background:var(--deep);border:1px solid var(--line);border-radius:14px;padding:20px;
+  }
+  .feat .ic{font-size:22px;margin-bottom:10px}
+  .feat b{display:block;font-size:15.5px;margin-bottom:6px}
+  .feat p{font-size:13.5px;color:var(--muted);line-height:1.55}
+
+  /* passport strip */
+  .strip{
+    background:var(--deep);border:1px solid var(--line);border-radius:16px;
+    padding:28px;display:flex;gap:24px;align-items:center;flex-wrap:wrap;
+  }
+  .strip .txt{flex:1;min-width:240px}
+  .strip h3{font-size:20px;font-weight:800;margin-bottom:8px}
+  .strip p{color:var(--muted);font-size:14.5px}
+  .strip .price{
+    font-size:13px;color:var(--signal);font-weight:700;margin-top:10px;
+    letter-spacing:.03em;
+  }
+
+  /* story */
+  .story{
+    max-width:640px;margin:0 auto;text-align:center;
+  }
+  .story p{color:var(--muted);font-size:15.5px;margin-bottom:16px}
+  .story .sig{color:var(--ink);font-weight:700;font-size:14px;margin-top:6px}
+  .story .sig span{display:block;color:var(--muted);font-weight:400;font-size:12.5px}
+
+  /* final cta */
+  .final{text-align:center;padding:80px 0 90px}
+  .final h2{margin-bottom:8px}
+  .final p{color:var(--muted);margin-bottom:26px}
+  footer{
+    border-top:1px solid var(--line);padding:26px 22px;text-align:center;
+    font-size:12.5px;color:var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Z<em>en</em> <svg class="yakmini" viewBox="0 0 44 36" aria-hidden="true"><circle cx="22" cy="21" r="13.5" fill="#f8dcc3"/><path d="M9 17 Q10 4 22 4 Q34 4 35 17 L35 19 Q22 13 9 19 Z" fill="#d0523a"/><path d="M9 18 Q22 12 35 18 L35 21.5 Q22 15.5 9 21.5 Z" fill="#e8c23a"/><rect x="7" y="18" width="5.5" height="9" rx="2.7" fill="#d0523a"/><rect x="31.5" y="18" width="5.5" height="9" rx="2.7" fill="#d0523a"/><circle cx="22" cy="4" r="2.6" fill="#f7f3ea"/><circle cx="17" cy="23" r="2.5" fill="#2b241c"/><circle cx="27" cy="23" r="2.5" fill="#2b241c"/><circle cx="17.9" cy="22.1" r="0.8" fill="#fff"/><circle cx="27.9" cy="22.1" r="0.8" fill="#fff"/><ellipse cx="13.5" cy="27" rx="2.4" ry="1.5" fill="#f2a9a0" opacity="0.85"/><ellipse cx="30.5" cy="27" rx="2.4" ry="1.5" fill="#f2a9a0" opacity="0.85"/><path d="M19 28.5 Q22 31.5 25 28.5 Q22 30 19 28.5 Z" fill="#c96a5a"/></svg></div>
+  <div class="sp"></div>
+  <a class="btn gold" href="app.html">Open the app</a>
+</nav>
+
+<div class="hero">
+  <div class="wrap">
+    <h1>Get the people you love <em>out of your phone</em> and onto your wall.</h1>
+    <p>Drop in your photos, pick a paper size, and Zen lays them out at exact real-world size — with professional AI color grading on every shot. Print at home in minutes.</p>
+    <div class="ctas">
+      <a class="btn gold big" href="app.html">Start printing — it's free</a>
+      <a class="btn big" href="#how">See how it works</a>
+    </div>
+    <div class="tiny">No sign-up · Your photos never leave your device</div>
+
+    <div class="sheetmock" aria-hidden="true">
+      <div class="tape"></div>
+      <div class="g" id="mockGrid"></div>
+    </div>
+  </div>
+</div>
+
+<section id="how">
+  <div class="wrap">
+    <h2>Three steps. Under a minute.</h2>
+    <p class="lead">No design skills, no measuring, no "why did it print the wrong size."</p>
+    <div class="feats">
+      <div class="feat"><div class="ic">📐</div><b>1 · Pick your canvas</b><p>A4, Letter, A3, 4×6 and more. Choose your photo size — 2-inch squares, passport, wallet, or any custom size. Zen instantly shows how many fit.</p></div>
+      <div class="feat"><div class="ic">🖼️</div><b>2 · Dump your photos</b><p>Drop in as many as you want — extra photos flow onto new pages automatically. Drag to rearrange, tap to reframe any shot.</p></div>
+      <div class="feat"><div class="ic">✨</div><b>3 · Enhance & print</b><p>One toggle fixes exposure, white balance and color on every photo — graded like film, safe on skin tones. Export a print-ready PDF at exact size.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Why it looks better than your printer app</h2>
+    <p class="lead">Layout tools place photos. Zen makes them worth printing.</p>
+    <div class="feats">
+      <div class="feat"><div class="ic">🎬</div><b>Filmmaker color grades</b><p>Presets built by a working filmmaker — Natural, Vivid, Warm Film, B&W, Soft Portrait. Not filters. Grades.</p></div>
+      <div class="feat"><div class="ic">👁️</div><b>See the difference</b><p>Hold the compare button and watch the original snap back. You'll never print un-enhanced again.</p></div>
+      <div class="feat"><div class="ic">📏</div><b>Exact size, guaranteed</b><p>A 2-inch square prints at exactly 2 inches. 300 DPI, cutting guides included. Print shops love our PDFs.</p></div>
+      <div class="feat"><div class="ic">🔒</div><b>Private by design</b><p>Everything runs in your browser. Your family photos are never uploaded to anyone's server — including ours.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="strip">
+      <div class="txt">
+        <h3>Stop paying $17 for passport photos. 🛂</h3>
+        <p>Take a photo against a plain wall, tap <b>Passport size</b>, hit <b>Repeat mode</b> — a full sheet of compliant 35×45mm (or US 2×2") photos, ready to print at any pharmacy.</p>
+        <div class="price">A whole sheet for the cost of one print — about 30¢</div>
+      </div>
+      <a class="btn gold" href="app.html">Make passport photos</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="story">
+      <h2>Built by a new dad with 4,000 photos and an empty wall.</h2>
+      <p>When my son was born I filmed and photographed everything — and none of it ever left my phone. Every printing app either got the sizes wrong or made his little face look gray and flat.</p>
+      <p>So I built the tool I wanted: exact sizes, honest colors, and grades I'd be happy to use on a film set. If you print something with it, you've made my day.</p>
+      <div class="sig">— Tsewang <span>filmmaker · founder of Zen</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="final">
+  <div class="wrap">
+    <h2>Your photos are waiting.</h2>
+    <p>Free · no sign-up · works on your phone</p>
+    <a class="btn gold big" href="app.html">Open Zen →</a>
+  </div>
+</div>
+
+<footer>© 2026 Zen · Made with love (and one very photogenic baby)</footer>
+
+<script>
+// warm film-toned mock grid
+const cols=["#c9a27a","#8ea88f","#b98d8d","#a3b3c2","#d0b06a","#9a8fb0",
+"#c98f6e","#7fa39a","#c2a3a3","#8fa3b8","#caa25e","#a89ac2",
+"#b8926e","#93ab86","#b89898","#9db0c0","#c9ab72","#9f93b8","#c39a78","#87a196"];
+const g=document.getElementById("mockGrid");
+cols.forEach(c=>{const d=document.createElement("div");d.className="c";d.style.background=c;g.appendChild(d);});
+</script>
+</body>
+</html>

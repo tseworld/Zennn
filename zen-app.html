@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zen — Print Your People</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Yatra+One&display=swap" rel="stylesheet">
+<meta name="color-scheme" content="dark">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --bench:#22272e; --bench-deep:#191d23; --line:#39404a;
+    --ink:#e9ebef; --muted:#8d95a3; --paper:#f8f7f3;
+    --tape:#e8b64c; --signal:#5ec2a6; --danger:#e26d5c;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{background:#22272e}
+  body{
+    font-family:"Avenir Next","Segoe UI",system-ui,sans-serif;
+    background:radial-gradient(1100px 500px at 75% -10%, #2c323b 0%, transparent 60%), var(--bench);
+    color:var(--ink); min-height:100vh;
+  }
+  header{
+    display:flex;align-items:center;gap:12px;padding:13px 18px;
+    background:var(--bench-deep);border-bottom:1px solid var(--line);
+    position:sticky;top:0;z-index:30;flex-wrap:wrap;
+  }
+  .logo{display:flex;flex-direction:column;line-height:1.05;margin-right:6px}
+  .logo b{font-size:16px;letter-spacing:.08em;text-transform:uppercase;font-family:"Yatra One","Avenir Next",sans-serif;display:flex;align-items:center;gap:7px}
+  .yakmini{width:26px;height:auto}
+  .kicker .yakmini{width:22px}
+  .logo b em{font-style:normal;color:var(--tape)}
+  .logo span{font-size:10.5px;color:var(--muted);letter-spacing:.04em}
+  .steps{display:flex;gap:4px;margin-left:6px}
+  .steps .st{
+    font-size:11.5px;font-weight:700;color:var(--muted);
+    padding:5px 10px;border-radius:99px;border:1px solid transparent;
+  }
+  .steps .st.on{color:var(--tape);border-color:var(--tape)}
+  .spacer{flex:1}
+  button,label.btn{
+    font:inherit;font-size:13px;font-weight:600;padding:9px 14px;border-radius:8px;
+    border:1px solid var(--line);background:#2d333c;color:var(--ink);cursor:pointer;
+    display:inline-flex;align-items:center;gap:7px;transition:.15s;
+  }
+  button:hover,label.btn:hover{background:#374049}
+  button.primary{background:var(--tape);border-color:var(--tape);color:#1b1f27}
+  button.primary:hover{background:#f0c25e}
+  button.ghost{background:transparent}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  select,input[type=number]{
+    font:inherit;font-size:13px;background:#2d333c;color:var(--ink);
+    border:1px solid var(--line);border-radius:8px;padding:8px 10px;
+  }
+  /* ---------- SETUP SCREEN ---------- */
+  #setup{max-width:860px;margin:34px auto 80px;padding:0 20px}
+  #setup .kicker{
+    display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--tape);
+    border:1px solid rgba(232,182,76,.4);border-radius:99px;padding:6px 14px;margin-bottom:18px;
+  }
+  #setup h1{
+    font-family:"Yatra One","Avenir Next",sans-serif;font-weight:400;
+    font-size:clamp(30px,5.5vw,46px);line-height:1.22;color:var(--ink);
+    letter-spacing:-0.015em;margin-bottom:12px;max-width:640px;
+  }
+  #setup h1 em{
+    font-style:normal;
+    background:linear-gradient(92deg,var(--tape),#f2d18a 55%,var(--signal));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  #setup .sub{color:var(--muted);font-size:clamp(14px,2vw,16.5px);margin-bottom:30px;max-width:560px;line-height:1.65}
+  .panel{background:var(--bench-deep);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:18px}
+  .panel h2{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+  .cards{display:flex;flex-wrap:wrap;gap:10px}
+  .card{
+    border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;
+    min-width:96px;text-align:center;transition:.15s;background:#242a32;
+  }
+  .card:hover{border-color:#57616e}
+  .card.on{border-color:var(--tape);background:#2e2a1d}
+  .card b{display:block;font-size:14px}
+  .card span{font-size:11px;color:var(--muted)}
+  .row{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .fitline{
+    margin-top:6px;font-size:15px;font-weight:700;color:var(--signal);
+  }
+  .fitline small{display:block;font-weight:400;color:var(--muted);font-size:12px;margin-top:2px}
+  #startBtn{margin-top:6px;font-size:15px;padding:12px 22px}
+  /* ---------- STUDIO ---------- */
+  #studio{display:none}
+  main{display:flex;gap:22px;align-items:flex-start;justify-content:center;padding:24px 18px 70px;flex-wrap:wrap}
+  .pages{display:flex;flex-direction:column;gap:34px}
+  .sheet-wrap{position:relative}
+  .sheet{background:var(--paper);box-shadow:0 2px 6px rgba(0,0,0,.45),0 22px 55px rgba(0,0,0,.5);position:relative}
+  .grid{position:absolute;display:grid}
+  .cell{position:relative;overflow:hidden;background:#eceae4;outline:1px dashed #c9c5ba;outline-offset:-1px}
+  .cell.filled{outline:none;background:#dcdad3}
+  .cell canvas{position:absolute;left:0;top:0;width:100%;height:100%}
+  .cell .num{position:absolute;left:4px;top:3px;z-index:2;font-size:9px;font-weight:700;color:#9a958a}
+  .cell.filled .num{color:rgba(255,255,255,.9);text-shadow:0 1px 2px rgba(0,0,0,.6)}
+  .cell.selected{box-shadow:inset 0 0 0 2px var(--signal)}
+  .cell.dragover{box-shadow:inset 0 0 0 2px var(--tape)}
+  .cell .x{
+    position:absolute;right:3px;top:3px;z-index:3;width:17px;height:17px;border-radius:50%;
+    border:0;padding:0;background:rgba(0,0,0,.55);color:#fff;font-size:10px;
+    display:none;align-items:center;justify-content:center;
+  }
+  .cell.filled:hover .x{display:flex}
+  .guides .cell{outline:1px solid rgba(120,120,120,.55);outline-offset:-1px}
+  .sheet-label{position:absolute;left:0;right:0;bottom:-24px;text-align:center;font-size:11px;color:var(--muted);letter-spacing:.06em}
+  aside{width:262px;background:var(--bench-deep);border:1px solid var(--line);border-radius:14px;padding:16px;position:sticky;top:76px}
+  aside h2{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:16px 0 9px}
+  aside h2:first-child{margin-top:0}
+  .drop{
+    border:1.5px dashed var(--line);border-radius:10px;padding:18px 12px;text-align:center;
+    font-size:12.5px;color:var(--muted);cursor:pointer;transition:.15s;
+  }
+  .drop.hot{border-color:var(--tape);color:var(--tape)}
+  .drop b{color:var(--ink);display:block;margin-bottom:3px;font-size:13px}
+  .count{margin-top:9px;font-size:12.5px;color:var(--muted)}
+  .count b{color:var(--signal)}
+  .mode{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .mode button{border:0;border-radius:0;background:transparent;flex:1;justify-content:center}
+  .mode button.on{background:var(--signal);color:#12251f}
+  .opt{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin:7px 0}
+  .opt input[type=checkbox]{accent-color:var(--tape);width:15px;height:15px}
+  .opt select{flex:1}
+  .toggleRow{
+    display:flex;align-items:center;justify-content:space-between;
+    background:#242a32;border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+  }
+  .toggleRow b{font-size:13px}
+  .toggleRow small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+  .switch{position:relative;width:42px;height:24px;flex:none}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{
+    position:absolute;inset:0;background:#3a4048;border-radius:99px;cursor:pointer;transition:.2s;
+  }
+  .slider:before{
+    content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;
+    background:#fff;transition:.2s;
+  }
+  .switch input:checked + .slider{background:var(--tape)}
+  .switch input:checked + .slider:before{transform:translateX(18px)}
+  #zoomBox{display:none}
+  #zoomBox.show{display:block}
+  input[type=range]{width:100%;accent-color:var(--signal)}
+  .hint{font-size:11.5px;color:var(--muted);line-height:1.55;margin-top:6px}
+  #compareBtn{width:100%;justify-content:center;margin-top:8px}
+  .exports{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+  .exports button{justify-content:center}
+  #busy{
+    display:none;position:fixed;inset:0;background:rgba(15,18,22,.7);z-index:60;
+    align-items:center;justify-content:center;flex-direction:column;gap:14px;
+  }
+  #busy.show{display:flex}
+  #busy .ring{
+    width:44px;height:44px;border-radius:50%;border:4px solid #3a4048;border-top-color:var(--tape);
+    animation:spin 1s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #busy p{font-size:14px;color:var(--ink)}
+  @media(max-width:720px){ aside{position:static;width:100%} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><b>Z<em>en</em> <svg class="yakmini" viewBox="0 0 44 36" aria-hidden="true"><circle cx="22" cy="21" r="13.5" fill="#f8dcc3"/><path d="M9 17 Q10 4 22 4 Q34 4 35 17 L35 19 Q22 13 9 19 Z" fill="#d0523a"/><path d="M9 18 Q22 12 35 18 L35 21.5 Q22 15.5 9 21.5 Z" fill="#e8c23a"/><rect x="7" y="18" width="5.5" height="9" rx="2.7" fill="#d0523a"/><rect x="31.5" y="18" width="5.5" height="9" rx="2.7" fill="#d0523a"/><circle cx="22" cy="4" r="2.6" fill="#f7f3ea"/><circle cx="17" cy="23" r="2.5" fill="#2b241c"/><circle cx="27" cy="23" r="2.5" fill="#2b241c"/><circle cx="17.9" cy="22.1" r="0.8" fill="#fff"/><circle cx="27.9" cy="22.1" r="0.8" fill="#fff"/><ellipse cx="13.5" cy="27" rx="2.4" ry="1.5" fill="#f2a9a0" opacity="0.85"/><ellipse cx="30.5" cy="27" rx="2.4" ry="1.5" fill="#f2a9a0" opacity="0.85"/><path d="M19 28.5 Q22 31.5 25 28.5 Q22 30 19 28.5 Z" fill="#c96a5a"/></svg></b><span>print your people</span></div>
+  <div class="steps" id="stepPills">
+    <span class="st on" data-s="1">1 · Canvas</span>
+    <span class="st" data-s="2">2 · Photos</span>
+    <span class="st" data-s="3">3 · Enhance & Print</span>
+  </div>
+  <div class="spacer"></div>
+  <button id="backToSetup" class="ghost" style="display:none">← Change paper</button>
+</header>
+
+<!-- ============ STEP 1 : SETUP ============ -->
+<section id="setup">
+  <div class="kicker"><svg class="yakmini" viewBox="0 0 44 36" aria-hidden="true"><circle cx="22" cy="21" r="13.5" fill="#f8dcc3"/><path d="M9 17 Q10 4 22 4 Q34 4 35 17 L35 19 Q22 13 9 19 Z" fill="#d0523a"/><path d="M9 18 Q22 12 35 18 L35 21.5 Q22 15.5 9 21.5 Z" fill="#e8c23a"/><rect x="7" y="18" width="5.5" height="9" rx="2.7" fill="#d0523a"/><rect x="31.5" y="18" width="5.5" height="9" rx="2.7" fill="#d0523a"/><circle cx="22" cy="4" r="2.6" fill="#f7f3ea"/><circle cx="17" cy="23" r="2.5" fill="#2b241c"/><circle cx="27" cy="23" r="2.5" fill="#2b241c"/><circle cx="17.9" cy="22.1" r="0.8" fill="#fff"/><circle cx="27.9" cy="22.1" r="0.8" fill="#fff"/><ellipse cx="13.5" cy="27" rx="2.4" ry="1.5" fill="#f2a9a0" opacity="0.85"/><ellipse cx="30.5" cy="27" rx="2.4" ry="1.5" fill="#f2a9a0" opacity="0.85"/><path d="M19 28.5 Q22 31.5 25 28.5 Q22 30 19 28.5 Z" fill="#c96a5a"/></svg> Zen · made in the Himalayan spirit</div>
+  <h1>Your favorite faces, <em>printed beautifully.</em></h1>
+  <p class="sub">Pick a paper. Drop in your photos. Zen lays them out at exact real-world size and color-grades every shot like film — ready to print in under a minute.</p>
+
+  <div class="panel">
+    <h2>Paper size</h2>
+    <div class="cards" id="paperCards"></div>
+    <div class="row" style="margin-top:12px">
+      <div class="mode" style="width:220px">
+        <button id="orPortrait" class="on">Portrait</button>
+        <button id="orLandscape">Landscape</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Photo size on the sheet</h2>
+    <div class="cards" id="sizeCards"></div>
+    <div class="row" id="customRow" style="display:none;margin-top:12px">
+      <label style="font-size:13px;color:var(--muted)">W (mm) <input type="number" id="cw" value="50" min="10" max="300" style="width:80px"></label>
+      <label style="font-size:13px;color:var(--muted)">H (mm) <input type="number" id="ch" value="50" min="10" max="300" style="width:80px"></label>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="fitline" id="fitLine"></div>
+    <button id="startBtn" class="primary">Start with this layout →</button>
+  </div>
+</section>
+
+<!-- ============ STEP 2/3 : STUDIO ============ -->
+<section id="studio">
+<main>
+  <div class="pages" id="pagesEl"></div>
+
+  <aside>
+    <h2>Photos</h2>
+    <div class="drop" id="dropZone"><b>Drop photos here</b>or tap to browse — extra photos add new pages automatically</div>
+    <input id="fileInput" type="file" accept="image/*" multiple hidden>
+    <div class="count"><b id="countNum">0</b> photo(s) placed</div>
+    <button id="repeatBtn" class="ghost" style="width:100%;justify-content:center;margin-top:8px">⧉ Repeat one photo to fill sheet</button>
+
+    <h2>Mode</h2>
+    <div class="mode">
+      <button id="modeArrange" class="on">Arrange</button>
+      <button id="modeCrop">Crop</button>
+    </div>
+    <div id="zoomBox">
+      <h2>Crop selected</h2>
+      <input id="zoomRange" type="range" min="100" max="300" value="100">
+      <div class="hint">Zoom, then drag the photo inside its frame. Faces are auto-centered when photos first land.</div>
+    </div>
+
+    <h2>AI Enhance</h2>
+    <div class="toggleRow">
+      <div><b>Auto-Enhance</b><small>exposure · white balance · color · sharpen</small></div>
+      <label class="switch"><input type="checkbox" id="enhanceChk" checked><span class="slider"></span></label>
+    </div>
+    <div class="opt" style="margin-top:10px">
+      <span>Style</span>
+      <select id="presetSel">
+        <option value="natural">Natural</option>
+        <option value="vivid">Vivid</option>
+        <option value="warmfilm">Warm Film</option>
+        <option value="bw">Black & White</option>
+        <option value="soft">Soft Portrait</option>
+      </select>
+    </div>
+    <button id="compareBtn" class="ghost">👁 Hold to see original</button>
+
+    <h2>Print</h2>
+    <label class="opt"><input type="checkbox" id="guidesChk"> Cutting guides</label>
+    <div class="exports">
+      <button id="pdfBtn" class="primary">⬇ Download PDF (print-ready)</button>
+      <button id="pngBtn">⬇ Download PNG · 300 DPI</button>
+      <button id="printBtn">🖨 Print</button>
+    </div>
+    <div class="hint">Print at 100% scale (never "fit to page") so sizes stay exact.</div>
+  </aside>
+</main>
+</section>
+
+<div id="busy"><div class="ring"></div><p id="busyMsg">Working…</p></div>
+
+<script>
+(function(){
+"use strict";
+/* ================= CONFIG ================= */
+const PAPERS = [
+  {id:"a4", name:"A4", w:210, h:297},
+  {id:"a3", name:"A3", w:297, h:420},
+  {id:"a5", name:"A5", w:148, h:210},
+  {id:"letter", name:"US Letter", w:215.9, h:279.4},
+  {id:"legal", name:"US Legal", w:215.9, h:355.6},
+  {id:"p46", name:"4×6 in", w:101.6, h:152.4},
+  {id:"p57", name:"5×7 in", w:127, h:177.8},
+];
+const SIZES = [
+  {id:"s1", name:'1″ square', w:25.4, h:25.4},
+  {id:"s15", name:'1.5″ square', w:38.1, h:38.1},
+  {id:"s2", name:'2″ square', w:50.8, h:50.8},
+  {id:"s25", name:'2.5″ square', w:63.5, h:63.5},
+  {id:"s3", name:'3″ square', w:76.2, h:76.2},
+  {id:"pass", name:"Passport", w:35, h:45, sub:"35×45 mm"},
+  {id:"us2", name:"US Visa 2×2″", w:50.8, h:50.8},
+  {id:"wallet", name:"Wallet", w:63.5, h:88.9, sub:"2.5×3.5″"},
+  {id:"custom", name:"Custom…", w:0, h:0},
+];
+const MARGIN = 5, GAP = 1.2;           // mm
+const DPI = 300, MMPX = DPI/25.4;
+
+/* ================= STATE ================= */
+let paper = PAPERS[0], landscape = false, size = SIZES[2];
+let cellW=50.8, cellH=50.8, cols=0, rows=0, perPage=0, ox=0, oy=0;
+// photos: [{img, zoom, ox, oy}] ; pages derive from count
+let photos = [];
+let mode="arrange", selected=-1, repeatMode=false;
+let pxPerMM = 2; // preview scale, set later
+
+/* ================= SETUP UI ================= */
+const paperCards = document.getElementById("paperCards");
+PAPERS.forEach((p,i)=>{
+  const d=document.createElement("div");
+  d.className="card"+(i===0?" on":"");
+  d.innerHTML=`<b>${p.name}</b><span>${p.w}×${p.h} mm</span>`;
+  d.onclick=()=>{paper=p;[...paperCards.children].forEach(c=>c.classList.remove("on"));d.classList.add("on");refit();};
+  paperCards.appendChild(d);
+});
+const sizeCards = document.getElementById("sizeCards");
+SIZES.forEach((s,i)=>{
+  const d=document.createElement("div");
+  d.className="card"+(s.id==="s2"?" on":"");
+  d.innerHTML=`<b>${s.name}</b><span>${s.sub||((s.w&&s.h)?`${s.w}×${s.h} mm`:"any size")}</span>`;
+  d.onclick=()=>{size=s;[...sizeCards.children].forEach(c=>c.classList.remove("on"));d.classList.add("on");
+    document.getElementById("customRow").style.display = s.id==="custom"?"flex":"none"; refit();};
+  sizeCards.appendChild(d);
+});
+document.getElementById("orPortrait").onclick=e=>{landscape=false;orBtns(e.target);refit();};
+document.getElementById("orLandscape").onclick=e=>{landscape=true;orBtns(e.target);refit();};
+function orBtns(t){document.getElementById("orPortrait").classList.remove("on");document.getElementById("orLandscape").classList.remove("on");t.classList.add("on");}
+document.getElementById("cw").oninput=refit;
+document.getElementById("ch").oninput=refit;
+
+function paperWH(){ return landscape? {W:paper.h,H:paper.w} : {W:paper.w,H:paper.h}; }
+function refit(){
+  cellW = size.id==="custom" ? +document.getElementById("cw").value||50 : size.w;
+  cellH = size.id==="custom" ? +document.getElementById("ch").value||50 : size.h;
+  const {W,H} = paperWH();
+  cols = Math.max(0, Math.floor((W - 2*MARGIN + GAP) / (cellW + GAP)));
+  rows = Math.max(0, Math.floor((H - 2*MARGIN + GAP) / (cellH + GAP)));
+  perPage = cols*rows;
+  const gw = cols*cellW + (cols-1)*GAP, gh = rows*cellH + (rows-1)*GAP;
+  ox = (W-gw)/2; oy = (H-gh)/2;
+  const f = document.getElementById("fitLine");
+  if(perPage>0){
+    f.innerHTML = `Fits <b>${perPage}</b> photos per sheet <small>${cols} across × ${rows} down · ${paper.name} ${landscape?"landscape":"portrait"} · each ${fmtMM(cellW)}×${fmtMM(cellH)}</small>`;
+    document.getElementById("startBtn").disabled=false;
+  } else {
+    f.innerHTML = `That photo size doesn't fit on ${paper.name} <small>try a smaller size or bigger paper</small>`;
+    document.getElementById("startBtn").disabled=true;
+  }
+}
+function fmtMM(mm){ const inch=mm/25.4; return Math.abs(inch-Math.round(inch*2)/2)<0.02 ? (Math.round(inch*2)/2)+'″' : Math.round(mm)+'mm'; }
+refit();
+
+document.getElementById("startBtn").onclick=()=>{
+  document.getElementById("setup").style.display="none";
+  document.getElementById("studio").style.display="block";
+  document.getElementById("backToSetup").style.display="inline-flex";
+  setStep(2);
+  buildPages();
+};
+document.getElementById("backToSetup").onclick=()=>{
+  document.getElementById("setup").style.display="block";
+  document.getElementById("studio").style.display="none";
+  document.getElementById("backToSetup").style.display="none";
+  setStep(1);
+};
+function setStep(n){ document.querySelectorAll("#stepPills .st").forEach(s=>s.classList.toggle("on", +s.dataset.s===n)); }
+
+/* ================= PAGE / GRID RENDERING ================= */
+const pagesEl = document.getElementById("pagesEl");
+let cellEls = []; // flat list matching slot index
+
+function numPages(){ return Math.max(1, Math.ceil(Math.max(photos.length, repeatMode?perPage:1) / perPage)); }
+
+function buildPages(){
+  const {W,H} = paperWH();
+  const maxW = Math.min(470, Math.max(300, window.innerWidth-330));
+  pxPerMM = maxW / W;
+  pagesEl.innerHTML=""; cellEls=[];
+  const NP = numPages();
+  for(let p=0;p<NP;p++){
+    const wrap=document.createElement("div"); wrap.className="sheet-wrap";
+    const sheet=document.createElement("div"); sheet.className="sheet";
+    sheet.style.width=(W*pxPerMM)+"px"; sheet.style.height=(H*pxPerMM)+"px";
+    const grid=document.createElement("div"); grid.className="grid"+(document.getElementById("guidesChk").checked?" guides":"");
+    grid.style.left=(ox*pxPerMM)+"px"; grid.style.top=(oy*pxPerMM)+"px";
+    grid.style.gridTemplateColumns=`repeat(${cols}, ${cellW*pxPerMM}px)`;
+    grid.style.gridTemplateRows=`repeat(${rows}, ${cellH*pxPerMM}px)`;
+    grid.style.gap=(GAP*pxPerMM)+"px";
+    for(let c=0;c<perPage;c++){
+      const idx=p*perPage+c;
+      const cell=document.createElement("div"); cell.className="cell"; cell.dataset.i=idx;
+      cell.innerHTML=`<span class="num">${idx+1}</span><button class="x">✕</button>`;
+      wireCell(cell, idx);
+      grid.appendChild(cell); cellEls[idx]=cell;
+    }
+    sheet.appendChild(grid); wrap.appendChild(sheet);
+    const lbl=document.createElement("div"); lbl.className="sheet-label";
+    lbl.textContent=`${paper.name} ${landscape?"landscape":"portrait"} · page ${p+1} of ${NP} · each photo ${fmtMM(cellW)}×${fmtMM(cellH)}`;
+    wrap.appendChild(lbl);
+    pagesEl.appendChild(wrap);
+  }
+  renderAll();
+}
+
+function wireCell(cell, i){
+  cell.querySelector(".x").addEventListener("click", e=>{
+    e.stopPropagation();
+    if(repeatMode){ repeatMode=false; photos=photos.slice(0,1); }
+    photos.splice(i,1); if(selected===i) select(-1);
+    buildPages();
+  });
+  cell.addEventListener("click", ()=>{ if(photoAt(i)) select(i); else fileInput.click(); });
+  cell.addEventListener("dragstart", e=>{
+    if(mode!=="arrange"||!photoAt(i)||repeatMode){e.preventDefault();return;}
+    e.dataTransfer.setData("text/plain",String(i));
+  });
+  cell.addEventListener("dragover", e=>{ if(mode==="arrange"){e.preventDefault();cell.classList.add("dragover");} });
+  cell.addEventListener("dragleave", ()=>cell.classList.remove("dragover"));
+  cell.addEventListener("drop", e=>{
+    cell.classList.remove("dragover");
+    const from=parseInt(e.dataTransfer.getData("text/plain"));
+    if(isNaN(from))return;
+    e.preventDefault();
+    if(from<photos.length && i<photos.length){ const t=photos[i];photos[i]=photos[from];photos[from]=t; select(i); renderAll(); }
+    else if(from<photos.length){ const [m]=photos.splice(from,1); photos.splice(Math.min(i,photos.length),0,m); buildPages(); }
+  });
+  let panning=false,sx=0,sy=0,so=null;
+  cell.addEventListener("pointerdown", e=>{
+    const ph=photoAt(i); if(mode!=="crop"||!ph)return;
+    select(i); panning=true; sx=e.clientX; sy=e.clientY; so={x:ph.ox,y:ph.oy};
+    cell.setPointerCapture(e.pointerId);
+  });
+  cell.addEventListener("pointermove", e=>{
+    if(!panning)return;
+    const ph=photoAt(i);
+    ph.ox=so.x+(e.clientX-sx)/(cellW*pxPerMM);
+    ph.oy=so.y+(e.clientY-sy)/(cellH*pxPerMM);
+    clampOff(ph); renderCell(i);
+  });
+  cell.addEventListener("pointerup",()=>panning=false);
+  cell.addEventListener("pointercancel",()=>panning=false);
+}
+
+function photoAt(i){ if(repeatMode) return photos[0]&&i<perPage?photos[0]:null; return photos[i]||null; }
+function coverW(ph){ const r=(ph.img.naturalWidth/ph.img.naturalHeight)/(cellW/cellH); return (r>=1?r:1)*ph.zoom; }
+function coverH(ph){ const r=(ph.img.naturalWidth/ph.img.naturalHeight)/(cellW/cellH); return (r>=1?1:1/r)*ph.zoom; }
+function clampOff(ph){
+  const mx=Math.max(0,(coverW(ph)-1)/2), my=Math.max(0,(coverH(ph)-1)/2);
+  ph.ox=Math.min(mx,Math.max(-mx,ph.ox)); ph.oy=Math.min(my,Math.max(-my,ph.oy));
+}
+
+/* ================= ENHANCEMENT ENGINE ================= */
+const PRESETS = {
+  natural:  {sat:1.10, con:1.05, wb:0.55, warm:0,     lift:0,    sharp:0.9, bw:false},
+  vivid:    {sat:1.28, con:1.13, wb:0.65, warm:0,     lift:0,    sharp:1.1, bw:false},
+  warmfilm: {sat:1.08, con:1.04, wb:0.35, warm:10,    lift:12,   sharp:0.7, bw:false},
+  bw:       {sat:0,    con:1.15, wb:0,    warm:0,     lift:6,    sharp:1.0, bw:true},
+  soft:     {sat:1.05, con:0.98, wb:0.5,  warm:5,     lift:8,    sharp:0.45,bw:false},
+};
+function enhance(ctx, w, h, p){
+  const d = ctx.getImageData(0,0,w,h), px=d.data, n=px.length;
+  // --- pass 1: stats (sampled) ---
+  let rs=0,gs=0,bs=0,cnt=0; const hist=new Uint32Array(256);
+  for(let i=0;i<n;i+=16){ // sample every 4th pixel
+    const r=px[i],g=px[i+1],b=px[i+2];
+    rs+=r;gs+=g;bs+=b;cnt++;
+    hist[(r*77+g*151+b*28)>>8]++;
+  }
+  const rm=rs/cnt, gm=gs/cnt, bm=bs/cnt, lm=(rm+gm+bm)/3;
+  // gray-world white balance gains, blended by p.wb, capped
+  const cap=(x)=>Math.min(1.25,Math.max(0.8,x));
+  const gr=1+( cap(lm/rm)-1 )*p.wb, gg=1+( cap(lm/gm)-1 )*p.wb, gb=1+( cap(lm/bm)-1 )*p.wb;
+  // levels: clip 0.5%
+  const clip=cnt*0.005; let lo=0,hi=255,acc=0;
+  for(let i=0;i<256;i++){acc+=hist[i];if(acc>clip){lo=i;break;}}
+  acc=0; for(let i=255;i>=0;i--){acc+=hist[i];if(acc>clip){hi=i;break;}}
+  if(hi-lo<40){lo=Math.max(0,lo-20);hi=Math.min(255,hi+20);}
+  const scale=255/(hi-lo);
+  // brightness lift if dark
+  const bright = lm<110 ? (110-lm)/300 : 0;
+  // tone LUT: levels + contrast S-curve + black lift + brightness
+  const lut=new Uint8ClampedArray(256);
+  for(let i=0;i<256;i++){
+    let v=(i-lo)*scale;
+    v=v+bright*255*(1-v/255);              // lift shadows more than highlights
+    v=(v-128)*p.con+128;                    // contrast
+    v=p.lift + v*(255-p.lift)/255;          // film black lift
+    lut[i]=v<0?0:v>255?255:v;
+  }
+  // --- pass 2: apply ---
+  for(let i=0;i<n;i+=4){
+    let r=px[i]*gr, g=px[i+1]*gg, b=px[i+2]*gb;
+    r=lut[r<0?0:r>255?255:r|0]; g=lut[g<0?0:g>255?255:g|0]; b=lut[b<0?0:b>255?255:b|0];
+    if(p.warm){ r=Math.min(255,r+p.warm*0.6); b=Math.max(0,b-p.warm*0.5); }
+    const l=(r*77+g*151+b*28)>>8;
+    if(p.bw){ r=g=b=l; }
+    else if(p.sat!==1){ r=l+(r-l)*p.sat; g=l+(g-l)*p.sat; b=l+(b-l)*p.sat; }
+    px[i]=r<0?0:r>255?255:r; px[i+1]=g<0?0:g>255?255:g; px[i+2]=b<0?0:b>255?255:b;
+  }
+  ctx.putImageData(d,0,0);
+  // --- unsharp mask via canvas blur diff ---
+  if(p.sharp>0){
+    const tmp=document.createElement("canvas");tmp.width=w;tmp.height=h;
+    const tc=tmp.getContext("2d");
+    tc.filter="blur(1.2px)"; tc.drawImage(ctx.canvas,0,0);
+    const sd=ctx.getImageData(0,0,w,h), bd=tc.getImageData(0,0,w,h);
+    const a=p.sharp*0.6;
+    for(let i=0;i<sd.data.length;i+=4){
+      for(let k=0;k<3;k++){
+        const v=sd.data[i+k]+(sd.data[i+k]-bd.data[i+k])*a;
+        sd.data[i+k]=v<0?0:v>255?255:v;
+      }
+    }
+    ctx.putImageData(sd,0,0);
+  }
+}
+
+/* ================= CELL RENDER ================= */
+let showOriginal=false;
+function renderCell(i){
+  const cell=cellEls[i]; if(!cell)return;
+  const ph=photoAt(i);
+  let cv=cell.querySelector("canvas");
+  if(!ph){ if(cv)cv.remove(); cell.classList.remove("filled"); cell.draggable=false; return; }
+  if(!cv){ cv=document.createElement("canvas"); cell.insertBefore(cv,cell.querySelector(".x")); }
+  const W=Math.round(cellW*pxPerMM*2), H=Math.round(cellH*pxPerMM*2); // 2x for crispness
+  cv.width=W; cv.height=H;
+  const ctx=cv.getContext("2d");
+  drawPhoto(ctx,W,H,ph);
+  if(document.getElementById("enhanceChk").checked && !showOriginal){
+    enhance(ctx,W,H,PRESETS[document.getElementById("presetSel").value]);
+  }
+  cell.classList.add("filled");
+  cell.draggable=(mode==="arrange"&&!repeatMode);
+  cell.classList.toggle("selected", i===selected);
+}
+function drawPhoto(ctx,W,H,ph){
+  const w=coverW(ph)*W, h=coverH(ph)*H;
+  ctx.fillStyle="#ddd"; ctx.fillRect(0,0,W,H);
+  ctx.drawImage(ph.img, W/2-w/2+ph.ox*W, H/2-h/2+ph.oy*H, w, h);
+}
+function renderAll(){
+  const total = repeatMode? Math.min(perPage, photos.length?perPage:0) : photos.length;
+  for(let i=0;i<cellEls.length;i++) renderCell(i);
+  document.getElementById("countNum").textContent = repeatMode? (photos.length?perPage:0) : photos.length;
+  const has=photos.length>0;
+  ["pdfBtn","pngBtn","printBtn"].forEach(id=>document.getElementById(id).disabled=!has);
+  if(has) setStep(3);
+}
+function select(i){
+  selected=i; renderAll();
+  const zb=document.getElementById("zoomBox");
+  const ph=photoAt(i);
+  if(i>=0&&ph){ zb.classList.add("show"); document.getElementById("zoomRange").value=ph.zoom*100; }
+  else zb.classList.remove("show");
+}
+
+/* ================= UPLOAD ================= */
+const fileInput=document.getElementById("fileInput");
+function addFiles(files){
+  const list=Array.from(files).filter(f=>f.type.startsWith("image/"));
+  if(!list.length)return;
+  busy(true,"Loading photos…");
+  let loaded=0;
+  list.forEach(f=>{
+    const url=URL.createObjectURL(f);
+    const im=new Image();
+    im.onload=()=>{
+      photos.push({img:im, zoom:1, ox:0, oy:-0.06}); // slight upward bias keeps faces framed
+      const ph=photos[photos.length-1]; clampOff(ph);
+      loaded++;
+      if(loaded===list.length){ busy(false); buildPages(); }
+    };
+    im.onerror=()=>{ loaded++; if(loaded===list.length){busy(false);buildPages();} };
+    im.src=url;
+  });
+}
+fileInput.addEventListener("change",e=>{addFiles(e.target.files);fileInput.value="";});
+const dz=document.getElementById("dropZone");
+dz.addEventListener("click",()=>fileInput.click());
+["dragover","dragenter"].forEach(ev=>document.addEventListener(ev,e=>{
+  if(e.dataTransfer&&Array.from(e.dataTransfer.types).includes("Files")){e.preventDefault();dz.classList.add("hot");}
+}));
+["dragleave","drop"].forEach(ev=>document.addEventListener(ev,e=>{
+  if(ev==="drop"&&e.dataTransfer&&e.dataTransfer.files.length){e.preventDefault();addFiles(e.dataTransfer.files);}
+  dz.classList.remove("hot");
+}));
+
+/* ================= CONTROLS ================= */
+document.getElementById("modeArrange").onclick=e=>{mode="arrange";modeBtns(e.target);renderAll();};
+document.getElementById("modeCrop").onclick=e=>{mode="crop";modeBtns(e.target);renderAll();};
+function modeBtns(t){document.getElementById("modeArrange").classList.remove("on");document.getElementById("modeCrop").classList.remove("on");t.classList.add("on");}
+document.getElementById("zoomRange").addEventListener("input",e=>{
+  const ph=photoAt(selected); if(!ph)return;
+  ph.zoom=e.target.value/100; clampOff(ph); renderCell(selected);
+  if(repeatMode) renderAll();
+});
+document.getElementById("guidesChk").onchange=()=>buildPages();
+document.getElementById("enhanceChk").onchange=()=>renderAll();
+document.getElementById("presetSel").onchange=()=>renderAll();
+document.getElementById("repeatBtn").onclick=()=>{
+  if(!photos.length){ fileInput.click(); repeatMode=true; return; }
+  repeatMode=!repeatMode;
+  document.getElementById("repeatBtn").textContent = repeatMode? "⧉ Repeat mode ON — tap to turn off" : "⧉ Repeat one photo to fill sheet";
+  if(repeatMode) photos=photos.slice(0,1);
+  buildPages();
+};
+const cmp=document.getElementById("compareBtn");
+["pointerdown","touchstart"].forEach(ev=>cmp.addEventListener(ev,()=>{showOriginal=true;renderAll();}));
+["pointerup","pointerleave","touchend"].forEach(ev=>cmp.addEventListener(ev,()=>{showOriginal=false;renderAll();}));
+
+/* ================= EXPORT ================= */
+function busy(on,msg){ document.getElementById("busy").classList.toggle("show",on); if(msg)document.getElementById("busyMsg").textContent=msg; }
+
+async function renderPageFull(pageIdx){
+  const {W,H}=paperWH();
+  const cvW=Math.round(W*MMPX), cvH=Math.round(H*MMPX);
+  const cv=document.createElement("canvas"); cv.width=cvW; cv.height=cvH;
+  const ctx=cv.getContext("2d");
+  ctx.fillStyle="#fff"; ctx.fillRect(0,0,cvW,cvH);
+  const cWpx=cellW*MMPX, cHpx=cellH*MMPX, gpx=GAP*MMPX;
+  const enh=document.getElementById("enhanceChk").checked;
+  const preset=PRESETS[document.getElementById("presetSel").value];
+  const guides=document.getElementById("guidesChk").checked;
+  for(let c=0;c<perPage;c++){
+    const idx=pageIdx*perPage+c;
+    const ph=photoAt(idx); if(!ph && !(repeatMode&&photos[0])) { if(guides) strokeCell(ctx,c,cWpx,cHpx,gpx); continue; }
+    const p2=repeatMode?photos[0]:ph; if(!p2){ if(guides) strokeCell(ctx,c,cWpx,cHpx,gpx); continue; }
+    const col=c%cols,row=(c/cols)|0;
+    const x=Math.round((ox+col*(cellW+GAP))*MMPX), y=Math.round((oy+row*(cellH+GAP))*MMPX);
+    // draw into tile canvas, enhance, paste
+    const tw=Math.round(cWpx), th=Math.round(cHpx);
+    const tile=document.createElement("canvas"); tile.width=tw; tile.height=th;
+    const tctx=tile.getContext("2d");
+    drawPhoto(tctx,tw,th,p2);
+    if(enh) enhance(tctx,tw,th,preset);
+    ctx.drawImage(tile,x,y);
+    if(guides){ ctx.strokeStyle="#999"; ctx.lineWidth=2; ctx.strokeRect(x+1,y+1,tw-2,th-2); }
+    await new Promise(r=>setTimeout(r,0)); // keep UI alive
+  }
+  function strokeCell(ctx,c,cw,ch,g){
+    const col=c%cols,row=(c/cols)|0;
+    const x=Math.round((ox+col*(cellW+GAP))*MMPX), y=Math.round((oy+row*(cellH+GAP))*MMPX);
+    ctx.strokeStyle="#bbb"; ctx.lineWidth=2; ctx.strokeRect(x+1,y+1,cw-2,ch-2);
+  }
+  return cv;
+}
+
+document.getElementById("pngBtn").onclick=async()=>{
+  busy(true,"Rendering 300 DPI PNG…");
+  const NP=numPages();
+  for(let p=0;p<NP;p++){
+    if(!pageHasPhotos(p))continue;
+    busy(true,`Rendering page ${p+1} of ${NP}…`);
+    const cv=await renderPageFull(p);
+    await new Promise(res=>cv.toBlob(b=>{
+      const a=document.createElement("a");a.href=URL.createObjectURL(b);
+      a.download=`zen-${paper.id}-page${p+1}.png`;a.click();res();
+    },"image/png"));
+  }
+  busy(false);
+};
+document.getElementById("pdfBtn").onclick=async()=>{
+  busy(true,"Building print-ready PDF…");
+  const {W,H}=paperWH();
+  const pdf=new jspdf.jsPDF({unit:"mm",format:[W,H],orientation:W>H?"landscape":"portrait"});
+  const NP=numPages(); let first=true;
+  for(let p=0;p<NP;p++){
+    if(!pageHasPhotos(p))continue;
+    busy(true,`Rendering page ${p+1} of ${NP}…`);
+    const cv=await renderPageFull(p);
+    if(!first)pdf.addPage([W,H],W>H?"landscape":"portrait");
+    first=false;
+    pdf.addImage(cv.toDataURL("image/jpeg",0.94),"JPEG",0,0,W,H);
+  }
+  pdf.save(`zen-${paper.id}.pdf`);
+  busy(false);
+};
+document.getElementById("printBtn").onclick=async()=>{
+  busy(true,"Preparing print…");
+  const {W,H}=paperWH();
+  const NP=numPages(); let imgs=[];
+  for(let p=0;p<NP;p++){
+    if(!pageHasPhotos(p))continue;
+    const cv=await renderPageFull(p);
+    imgs.push(cv.toDataURL("image/jpeg",0.94));
+  }
+  busy(false);
+  const w=window.open("","_blank");
+  w.document.write(`<html><head><title>Zen</title><style>
+    @page{size:${W}mm ${H}mm;margin:0} body{margin:0}
+    img{width:${W}mm;height:${H}mm;display:block;page-break-after:always}
+  </style></head><body>${imgs.map(s=>`<img src="${s}">`).join("")}
+  <script>onload=()=>print()<\/script></body></html>`);
+  w.document.close();
+};
+function pageHasPhotos(p){
+  if(repeatMode)return p===0&&photos.length>0;
+  return photos.length > p*perPage;
+}
+
+window.addEventListener("resize",()=>{ if(document.getElementById("studio").style.display==="block") buildPages(); });
+})();
+</script>
+
+<!-- ================= ZEN, THE LITTLE HELPER ================= -->
+<style>
+  #yakku{
+    position:fixed; left:16px; bottom:14px; z-index:55;
+    display:flex; align-items:flex-end; gap:10px;
+    pointer-events:none; user-select:none;
+  }
+  #yakku svg{
+    width:92px; height:auto; filter:drop-shadow(0 4px 10px rgba(0,0,0,.45));
+    transform-origin:50% 90%;
+    animation:yakIdle 3.4s ease-in-out infinite;
+  }
+  @keyframes yakIdle{
+    0%,100%{transform:translateY(0) rotate(0deg)}
+    50%{transform:translateY(-3px) rotate(-1.2deg)}
+  }
+  #yakku.happy svg{animation:yakHop .55s ease-in-out 3}
+  @keyframes yakHop{
+    0%,100%{transform:translateY(0) rotate(0)}
+    35%{transform:translateY(-14px) rotate(-4deg)}
+    70%{transform:translateY(0) rotate(3deg)}
+  }
+  #yakku .bubble{
+    background:#fff; color:#1b1f27; font-size:12.5px; font-weight:600;
+    padding:9px 12px; border-radius:12px 12px 12px 3px;
+    max-width:200px; line-height:1.4; margin-bottom:38px;
+    box-shadow:0 4px 14px rgba(0,0,0,.35);
+    opacity:0; transform:translateY(6px); transition:.3s;
+  }
+  #yakku .bubble.show{opacity:1; transform:translateY(0)}
+  .yak-eye{animation:yakBlink 4.6s infinite}
+  @keyframes yakBlink{
+    0%,94%,100%{transform:scaleY(1)} 96%,98%{transform:scaleY(0.08)}
+  }
+  .yak-tail{transform-origin:79px 66px; animation:tailWag 2.4s ease-in-out infinite}
+  @keyframes tailWag{0%,100%{transform:rotate(0)}50%{transform:rotate(14deg)}}
+  .flag{
+    position:fixed; top:-16px; width:10px; height:13px; z-index:54; pointer-events:none;
+    animation:flagFall linear forwards;
+  }
+  @keyframes flagFall{
+    to{transform:translateY(110vh) rotate(540deg); opacity:.9}
+  }
+  @media(max-width:640px){ #yakku svg{width:70px} #yakku .bubble{max-width:150px;font-size:11.5px} }
+</style>
+
+<div id="yakku" aria-hidden="true">
+  <svg viewBox="0 0 120 100">
+    <!-- little Zen, 6-month-old baby -->
+    <!-- legs -->
+    <rect x="42" y="80" width="15" height="14" rx="7" fill="#f7f3ea"/>
+    <rect x="63" y="80" width="15" height="14" rx="7" fill="#f7f3ea"/>
+    <circle cx="49" cy="95" r="4.5" fill="#f8dcc3"/>
+    <circle cx="71" cy="95" r="4.5" fill="#f8dcc3"/>
+    <!-- body (cream onesie) -->
+    <rect x="41" y="56" width="38" height="34" rx="17" fill="#f7f3ea"/>
+    <path d="M48 62 Q60 70 72 62" stroke="#e2dbc9" stroke-width="2" fill="none"/>
+    <!-- left arm -->
+    <rect x="36" y="60" width="10" height="20" rx="5" fill="#f7f3ea"/>
+    <circle cx="41" cy="81" r="4" fill="#f8dcc3"/>
+    <!-- right arm waving -->
+    <g class="yak-tail">
+      <rect x="74" y="46" width="10" height="22" rx="5" fill="#f7f3ea" transform="rotate(28 79 66)"/>
+      <circle cx="88" cy="49" r="4.5" fill="#f8dcc3"/>
+    </g>
+    <!-- head -->
+    <circle cx="60" cy="34" r="25" fill="#f8dcc3"/>
+    <!-- hair peek -->
+    <path d="M52 14 Q56 10 60 14 Q64 10 68 14" stroke="#3a2f26" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <!-- earflap hat, prayer-flag colors -->
+    <path d="M36 28 Q38 6 60 6 Q82 6 84 28 L84 31 Q60 22 36 31 Z" fill="#d0523a"/>
+    <path d="M36 30 Q60 21 84 30 L84 35 Q60 26 36 35 Z" fill="#e8c23a"/>
+    <rect x="33" y="30" width="9" height="16" rx="4.5" fill="#d0523a"/>
+    <rect x="78" y="30" width="9" height="16" rx="4.5" fill="#d0523a"/>
+    <circle cx="60" cy="6" r="4.5" fill="#f7f3ea"/>
+    <!-- eyes (big anime eyes, they blink) -->
+    <g class="yak-eye"><circle cx="50" cy="38" r="4.4" fill="#2b241c"/><circle cx="51.6" cy="36.4" r="1.5" fill="#fff"/></g>
+    <g class="yak-eye"><circle cx="70" cy="38" r="4.4" fill="#2b241c"/><circle cx="71.6" cy="36.4" r="1.5" fill="#fff"/></g>
+    <!-- rosy cheeks -->
+    <ellipse cx="44" cy="46" rx="4.2" ry="2.6" fill="#f2a9a0" opacity="0.85"/>
+    <ellipse cx="76" cy="46" rx="4.2" ry="2.6" fill="#f2a9a0" opacity="0.85"/>
+    <!-- happy open mouth -->
+    <path d="M55 49 Q60 55 65 49 Q60 52 55 49 Z" fill="#c96a5a"/>
+  </svg>
+  <div class="bubble" id="yakBubble"></div>
+</div>
+
+<script>
+(function(){
+  const yak=document.getElementById("yakku"), bub=document.getElementById("yakBubble");
+  let hideT=null;
+  function say(msg, ms=4200, happy=false){
+    bub.textContent=msg; bub.classList.add("show");
+    if(happy){ yak.classList.remove("happy"); void yak.offsetWidth; yak.classList.add("happy"); }
+    clearTimeout(hideT); hideT=setTimeout(()=>bub.classList.remove("show"), ms);
+  }
+  function flags(n=26){
+    const cols=["#2456a4","#ffffff","#d03a2b","#2c8a43","#e8c23a"]; // prayer flag colors
+    for(let i=0;i<n;i++){
+      const f=document.createElement("div"); f.className="flag";
+      f.style.left=(5+Math.random()*90)+"vw";
+      f.style.background=cols[i%5];
+      f.style.animationDuration=(2.2+Math.random()*2)+"s";
+      f.style.animationDelay=(Math.random()*0.7)+"s";
+      document.body.appendChild(f);
+      setTimeout(()=>f.remove(), 5200);
+    }
+  }
+  // --- moments ---
+  setTimeout(()=>say("Tashi delek! I'm Zen 👶 Pick your paper size to start!"), 900);
+  document.getElementById("paperCards").addEventListener("click",()=>say("Good choice! Now pick a photo size."));
+  document.getElementById("sizeCards").addEventListener("click",()=>say("Nice! Check how many fit, then hit Start."));
+  document.getElementById("startBtn").addEventListener("click",()=>say("Now feed me photos! Drop them in 🍃", 5200, true));
+  document.getElementById("fileInput").addEventListener("change",()=>say("Ooooh, beautiful! Carrying them to the sheet…", 3800, true));
+  document.getElementById("enhanceChk").addEventListener("change",e=>{
+    say(e.target.checked?"Making every photo shine ✨":"Back to the originals!");
+  });
+  document.getElementById("presetSel").addEventListener("change",e=>{
+    const m={natural:"Clean and true 🤍",vivid:"Extra pop! 🌈",warmfilm:"Ahh, warm like butter tea ☕",bw:"Timeless. Very serious baby.",soft:"Soft and dreamy ☁️"};
+    say(m[e.target.value]||"Looking good!");
+  });
+  document.getElementById("repeatBtn").addEventListener("click",()=>say("One photo, whole sheet — passport magic! 🛂"));
+  // celebrate on export finishing (watch the busy overlay turn off after PDF/PNG/print)
+  let exporting=false;
+  ["pdfBtn","pngBtn","printBtn"].forEach(id=>document.getElementById(id).addEventListener("click",()=>{exporting=true;}));
+  new MutationObserver(()=>{
+    const on=document.getElementById("busy").classList.contains("show");
+    if(!on && exporting){ exporting=false; say("Ta-da! Ready to print! 🎉", 5200, true); flags(); }
+  }).observe(document.getElementById("busy"),{attributes:true,attributeFilter:["class"]});
+})();
+</script>
+</body>
+</html>
